@@ -117,6 +117,11 @@ func resourceGitlabGroup() *schema.Resource {
 				Computed:  true,
 				Sensitive: true,
 			},
+			"read_delay": {
+				Type:     schema.TypeInt,
+				Optional: true,
+				Default:  0,
+			},
 		},
 	}
 }
@@ -177,6 +182,9 @@ func resourceGitlabGroupCreate(d *schema.ResourceData, meta interface{}) error {
 		options.ParentID = gitlab.Int(v.(int))
 	}
 
+	read_delay_s, _ := d.GetOk("read_delay")
+  read_delay := read_delay_s.(int)
+
 	log.Printf("[DEBUG] create gitlab group %q", *options.Name)
 
 	group, _, err := client.Groups.CreateGroup(options)
@@ -185,6 +193,9 @@ func resourceGitlabGroupCreate(d *schema.ResourceData, meta interface{}) error {
 	}
 
 	d.SetId(fmt.Sprintf("%d", group.ID))
+
+  log.Printf("[INFO] Sleeping for %d ms", read_delay)
+  time.Sleep(time.Duration(read_delay) * time.Millisecond)
 
 	return resourceGitlabGroupRead(d, meta)
 }
